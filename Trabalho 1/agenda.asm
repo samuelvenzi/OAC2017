@@ -1,11 +1,20 @@
 .data
 
-menu_string: .asciiz "\nSelecione uma opção:\n1. Visualizar agenda\n2. Buscar contato\n3. Criar contato\n4. Sair\n\nOpção:"
+menu_string: .asciiz "\nSelecione uma opção:\n1. Visualizar agenda\n2. Buscar contato\n3. Criar contato\n4. Sair\n\nOpção: "
 invalid_msg: .asciiz "\n\nOpção inválida. Digite uma opção do menu!\n"
+name_msg: .asciiz "\nInsira o nome completo: "
+short_name_msg: .asciiz "\nInsira o nome curto: "
+name: .asciiz 
+short_name: .asciiz
+phone: .asciiz
+
+
+
 .text 
 main:
 	jal open_file
 	jal menu
+	jal create
 
 
 	li $v0, 10
@@ -39,11 +48,31 @@ close_file:
 	jr $ra
 
 create:
-
-
-
+	li $v0, 4
+	la $a0, name_msg
+	syscall   # prints name messsage
+	
+	la $a0, name
+    	li $a1, 150
+    	li $v0, 8
+   	syscall		# gets name
+	jr $ra
+	
+	li $v0, 4
+	la $a0, short_name_msg
+	syscall   # prints short name message
+	
+	la $a0, short_name
+    	li $a1, 30
+    	li $v0, 8
+   	syscall		# gets short name
+	jr $ra
+	
 edit:
 
 
-
+	jr $ra
 delete:
+
+
+	jr $ra
