@@ -7,8 +7,7 @@ short_name_msg: .asciiz "\nInsira o nome curto: "
 name: .asciiz 
 short_name: .asciiz
 phone: .asciiz
-
-
+fout: .asciiz "db.txt" # filename for output
 
 .text 
 main:
@@ -40,7 +39,13 @@ menu:
 	
 
 open_file:
-
+	
+	li   $v0, 13       # system call for open file
+  	la   $a0, fout     # output file name
+  	li   $a1, 1       # Open for writing (flags are 0: read, 1: write)
+  	li   $a2, 0        # mode is ignored
+  	syscall            # open a file (file descriptor returned in $v0)
+  	move $s6, $v0      # save the file descriptor 
 	jr $ra
 	
 close_file:
@@ -56,7 +61,6 @@ create:
     	li $a1, 150
     	li $v0, 8
    	syscall		# gets name
-	jr $ra
 	
 	li $v0, 4
 	la $a0, short_name_msg
