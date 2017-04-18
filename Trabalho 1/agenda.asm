@@ -6,10 +6,10 @@ name_msg: .asciiz "\nInsira o nome completo: "
 short_name_msg: .asciiz "\nInsira o nome curto: "
 phone_msg: .asciiz "\nInsira o número de telefone: "
 email_msg: .asciiz "\nInsira o endereço de email: "
-name: .asciiz 
-short_name: .asciiz
-phone: .asciiz
-email: .asciiz
+name: .space 150 
+short_name: .space 30
+phone: .space 14
+email: .space 100
 fout: .asciiz "db.txt" 
 
 .text 
@@ -52,7 +52,7 @@ open_file:
   	la   $a0, fout     
   	li   $a1, 1       
   	li   $a2, 0       
-  	syscall      	# opens file
+  	syscall	# opens file
   	move $s6, $v0      
 	jr $ra
 	
@@ -72,6 +72,7 @@ create:
     	li $a1, 150
     	li $v0, 8
    	syscall		# gets name
+	jal write
 	
 	li $v0, 4
 	la $a0, short_name_msg
@@ -81,6 +82,7 @@ create:
     	li $a1, 30
     	li $v0, 8
    	syscall		# gets short name
+   	jal write
    	
    	li $v0, 4
 	la $a0, phone_msg
@@ -90,6 +92,7 @@ create:
     	li $a1, 14
     	li $v0, 8
    	syscall		# gets phone number
+   	jal write
    	
    	li $v0, 4
 	la $a0, email_msg
@@ -99,6 +102,7 @@ create:
     	li $a1, 100
     	li $v0, 8
    	syscall		# gets email address
+   	jal write
    	
    	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
    	jal write
@@ -128,4 +132,7 @@ read:
 
 write:
 
+	li   $v0, 15       # system call for write to file
+	move $a0, $s6      # file descriptor 
+	syscall            # write to file
 	jr $ra
