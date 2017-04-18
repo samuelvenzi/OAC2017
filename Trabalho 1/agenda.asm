@@ -72,6 +72,8 @@ create:
     	li $a1, 150
     	li $v0, 8
    	syscall		# gets name
+   	la $a1, name
+   	li $a2, 150
 	jal write
 	
 	li $v0, 4
@@ -82,6 +84,8 @@ create:
     	li $a1, 30
     	li $v0, 8
    	syscall		# gets short name
+   	la $a1, short_name
+   	li $a2, 30
    	jal write
    	
    	li $v0, 4
@@ -92,7 +96,9 @@ create:
     	li $a1, 14
     	li $v0, 8
    	syscall		# gets phone number
-   	jal write
+   	la $a1, phone
+   	li $a2, 14
+	jal write
    	
    	li $v0, 4
 	la $a0, email_msg
@@ -102,10 +108,11 @@ create:
     	li $a1, 100
     	li $v0, 8
    	syscall		# gets email address
+   	la $a1, email
+   	li $a2, 100
    	jal write
    	
    	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
-   	jal write
 	j continue
 	
 edit:
