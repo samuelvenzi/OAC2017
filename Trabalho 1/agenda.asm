@@ -12,6 +12,7 @@ phone: .space 14
 email: .space 100
 fout: .asciiz "db.txt" 
 delimeter: .asciiz ";"
+nl: .asciiz "\n"
 
 .text 
 main:
@@ -51,7 +52,7 @@ open_file:
 	
 	li   $v0, 13       
   	la   $a0, fout     
-  	li   $a1, 1       
+  	li   $a1, 9       
   	li   $a2, 0       
   	syscall	# opens file
   	move $s6, $v0      
@@ -113,6 +114,13 @@ create:
    	li $a2, 100
    	jal write
    	
+   	la $a1, nl	   # jumps a line at the end of the register
+   	li $a2, 1
+   	li   $v0, 15       # system call for write to file
+	move $a0, $s6      # file descriptor 
+	syscall            # write to file
+	
+	
    	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
 	j continue
 	
