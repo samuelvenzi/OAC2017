@@ -1,7 +1,3 @@
-.data
-
-menu_string: .asciiz "\nSelecione uma opção:\n1. Visualizar agenda\n2. Buscar contato\n3. Criar contato\n4. Sair\n\nOpção: "
-invalid_msg: .asciiz "\n\nOpção inválida. Digite uma opção do menu!\n"
 name_msg: .asciiz "\nInsira o nome completo: "
 short_name_msg: .asciiz "\nInsira o nome curto: "
 phone_msg: .asciiz "\nInsira o número de telefone: "
@@ -135,6 +131,11 @@ view:
 	j continue
 read:
 	
+	li   $v0, 14       # system call for reading from file
+	move $a0, $s0      # file descriptor 
+	#la   $a1, buffer   # address of buffer from which to read
+	#li   $a2, 100000   # hardcoded buffer length
+	syscall            # read from file
 	jr $ra
 
 write:
