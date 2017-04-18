@@ -58,6 +58,9 @@ open_file:
 	
 close_file:
 
+	li   $v0, 16 # system call for close file
+	move $a0, $s6 # file descriptor to close
+	syscall	# close file
 	jr $ra
 
 create:
