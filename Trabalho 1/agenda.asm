@@ -11,6 +11,7 @@ short_name: .space 30
 phone: .space 14
 email: .space 100
 fout: .asciiz "db.txt" 
+delimeter: .asciiz ";"
 
 .text 
 main:
@@ -133,16 +134,23 @@ view:
 	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
    	jal read
 	j continue
+
 read:
 	li   $v0, 14       # system call for reading from file 
 	move $a0, $s0      # file descriptor  
-	#la   $a1, buffer   # address of buffer from which to read 
-	#li   $a2, 100000   # hardcoded buffer length 
 	syscall            # read from file 
 	jr $ra
 
 write:
-
+	move $t8, $a1
+   	loop: 
+   		lb $t1, 0($t8)
+   		beq $t1, 0xA, end_loop
+   		addi $t8, $t8, 1
+   		j loop
+   	end_loop:
+   	lbu $t1, delimeter
+   	sb $t1, 0($t8)
 	li   $v0, 15       # system call for write to file
 	move $a0, $s6      # file descriptor 
 	syscall            # write to file
