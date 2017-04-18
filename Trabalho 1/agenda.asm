@@ -134,7 +134,11 @@ view:
    	jal read
 	j continue
 read:
-	
+	li   $v0, 14       # system call for reading from file 
+	move $a0, $s0      # file descriptor  
+	#la   $a1, buffer   # address of buffer from which to read 
+	#li   $a2, 100000   # hardcoded buffer length 
+	syscall            # read from file 
 	jr $ra
 
 write:
