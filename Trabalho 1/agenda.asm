@@ -145,6 +145,7 @@ delete:
 seek:	
 	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
    	jal open_file_r
+   	addi $a3, $a3, 3
 	jal read
 	jal close_file
 	j continue
@@ -157,19 +158,36 @@ view:
 	j continue
 
 read:	
+	mul $t5, $a3, 4 
+	addi $t2, $t5, -4
+	addi $t3, $0, 0
+	addi $t4, $0, 0
 	la $t0, register 
 	char_loop:		# char loop makes sure only one register is read
-		beq $t1, 0xA, char_end
 		li   $v0, 14       # system call for reading from file 
 		move $a0, $s6      # file descriptor 
 		la $a1, buffer
 		la $a2, 1
 		syscall            # read from file 
 		lb $t1, buffer
-		beq $t1, $0, bora
+		bne $t1, 0xA, bora
+		addi $t4, $t4, 1   # counts new line 
+		bora:
+		beq $t1, $0, gogo     # condition so it doesn't save \0 to the memory     
+		bne $t1, 0x3B, vamo   
+		addi $t3, $t3, 1     # counts delimeter
+		vamo:
+		beq $t4, $a3, char_end
+		blt $t3, $t2, gogo
+		beq $t1, 0xA, gogo
+		div $0, $t3, 4
+		mfhi $t6
+		bne $t6, 0, andale
+		beq $t1, 0x3B, gogo
+		andale:
 		sb $t1, 0($t0)
 		addi $t0, $t0, 1
-		bora:
+		gogo:
 		j char_loop
 	char_end:
 	jr $ra
