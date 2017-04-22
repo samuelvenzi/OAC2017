@@ -1,7 +1,7 @@
 .data
 
 buffer: .space 4
-register: .space 512
+register: .space 296
 id: .word 0x21212121
 name: .space 150
 short_name: .space 30
@@ -150,18 +150,45 @@ delete:
 	
 	
 seek:	
-	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
    	jal open_file_r
    	addi $a3, $a3, 3
 	jal read
 	jal close_file
+	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
 	j continue
 
 view:
-	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
-   	jal open_file_r
-   	jal read
+   	
+   	addi $a3, $0, 1
+   	la $t0, register
+   	loop_view:
+   		li $v0, 4
+		la $a0, nl
+		syscall   # prints new line
+   		jal open_file_r
+   		jal read
+   		beq $v0, $0, end_view
+   		addi $a3, $a3, 1
+   		addi $t0, $t0, 4    # address of name inside register
+   		addi $t3, $0, 0     # delimeter counter
+   		print_loop:
+		lb $t1, 0($t0)
+		bne $t1, 0X3B, print_cont
+		addi $t3, $t3, 1
+		print_cont:
+		bne $t3, 4, print_cont2
+		addi $t3, $0, 0 
+		j loop_view
+		print_cont2:
+		li $v0, 4
+		la $a0, 0($t0)
+		syscall   # prints whole register
+		jal close_file
+   		j loop_view
+   	end_view:
    	jal close_file
+   	
+   	addi $v0, $zero, 1 # sets v0 to 1 so when it returns to continue the branches are not triggered
 	j continue
 
 read:	
@@ -178,30 +205,42 @@ read:
 		la $a2, 1
 		syscall            # read from file 
 		
-		beq $v0, -1, almost
-		beq $v0, 0, almost
+		beq $v0, -1, almost  # branch if error
+		beq $v0, 0, almost   # branch if no char is read
+		
 		
 		lb $t1, buffer
 		bne $t1, 0xA, bora
 		addi $t4, $t4, 1   # counts new line 
+		add $t8, $0, $t0
 		la $t0, register 
 		
 		bora:
 		beq $t1, $0, gogo     # condition so it doesn't save \0 to the memory     
 		
 		vamo:
-		beq $t4, $a3, char_end
-		beq $t1, 0xA, gogo
+		beq $t4, $a3, char_end   # branch if line wanted is read
+		beq $t1, 0xA, gogo       # branch so it does not print \n
 		
-		bgt $t4, $t5, gogo
+		bne $t4, $t5, gogo
 		sb $t1, 0($t0)
 		addi $t0, $t0, 1
 		gogo:
 		j char_loop
-		almost:
-		add $t0, $0, $0
-		sb $t0, buffer
+		
 	char_end:
+	addi $t1, $0, 0xA
+	la $t6, id
+	sb $t1, 0($t8)
+	loop_zero:
+		sb $0, 0($t8)
+		addi $t8, $t8, 1
+		beq $t8, $t6, end_zero
+		j loop_zero
+	end_zero:
+	almost:
+	add $t1, $0, $0
+	sb $t1, buffer
 	jr $ra
 
 write:
