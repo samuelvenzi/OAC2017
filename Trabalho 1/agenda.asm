@@ -11,12 +11,14 @@ phone: .space 15
 email: .space 100
 menu_string: .asciiz "\nSelecione uma opção:\n1. Visualizar agenda\n2. Buscar contato\n3. Criar contato\n4. Sair\n\nOpção: "
 invalid_msg: .asciiz "\n\nOpção inválida. Digite uma opção do menu!\n"
+invalid_phone: .asciiz "\n\nFormato de telefone inválido.\n"
 name_msg: .asciiz "\nInsira o nome completo: "
 short_name_msg: .asciiz "\nInsira o nome curto: "
-phone_msg: .asciiz "\nInsira o número de telefone: "
+phone_msg: .asciiz "\nInsira o número de telefone no formato (99)9999-9999: "
 email_msg: .asciiz "\nInsira o endereço de email: "
 view_msg: .asciiz "Selecione um contato (insira 0 para voltar ao menu): "
 seek_msg: .asciiz "Insira a primeira letra do nome do contato que deseja buscar: "
+success_msg: .asciiz "\n\nOperação realizada com sucesso!\n\n"
 fout: .asciiz "db.txt" 
 delimeter: .asciiz ";"
 nl: .asciiz "\n"
@@ -99,48 +101,103 @@ create:
 	la $a1, keep_id
 	jal write
 	
+	name_loop:
 	li $v0, 4
 	la $a0, name_msg
 	syscall   # prints name messsage
+	
 	
 	la $a0, name
     	li $a1, 150
     	li $v0, 8	
    	syscall		# gets name
+   	lb $v0, name
+   	beq $v0, 0xA, name_loop
    	
    	la $a1, name
 	jal write
 	
+	shname_loop:
 	li $v0, 4
 	la $a0, short_name_msg
 	syscall   # prints short name message
+	
 	
 	la $a0, short_name
     	li $a1, 30
     	li $v0, 8
    	syscall		# gets short name
+   	lb $v0, short_name
+   	beq $v0, 0xA, shname_loop
    	la $a1, short_name
    	jal write
    	
    	li $v0, 4
+	loop1:
+    	li $v0, 4
 	la $a0, phone_msg
 	syscall   # prints short name message
-	
 	la $a0, phone
-    	li $a1, 14
+    	li $a1, 15
     	li $v0, 8
    	syscall		# gets phone number
-   	la $a1, phone
-	jal write
+   	lb $v0, phone
+   	beq $v0, 0xA, loop1
+   	la $t0, phone
+   	add $t1, $0, $0 
+	loop2:		#count the number of digits
+		bgt $t1, 0xE, phone_invalid
+		lb $t2, 0($t0)
+		beq $t2, 0xA, loop3
+    		beq $t1, $0, L3 		# first element is (
+    		beq $t1, 0x3, L4		# third element is )
+    		beq $t1, 0x8, L5		# eighth element is -
+    		addi $t1, $t1, 1
+    		addi $t0, $t0, 1
+    		j loop2    			 
+    	L3:
+    		beq $t2, 0x28, L6
+    		j phone_invalid
+    		L6:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2
+    	L4:
+    		beq $t2, 0x29, L7
+    		j phone_invalid
+    		L7:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2
+    	L5:
+    		beq $t2, 0x2D, L8
+    		j phone_invalid
+    		L8:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2
+    	phone_invalid:	
+		li $v0, 4
+		la $a0, invalid_phone
+		syscall   # prints message
+		j loop1	   	
+   		
+loop3:
+   		la $a1, phone
+		jal write
    	
+   	email_loop:
    	li $v0, 4
 	la $a0, email_msg
 	syscall   # prints short name message
+	
 	
 	la $a0, email
     	li $a1, 100
     	li $v0, 8
    	syscall		# gets email address
+   	lb $v0, email
+   	beq $v0, 0xA, email_loop
    	la $a1, email
    	jal write
    	
@@ -151,6 +208,11 @@ create:
 	syscall            # write to file
 	
 	jal close_file
+	
+	li $v0, 4
+	la $a0, success_msg
+	syscall   # prints menu
+	
    	addi $v0, $zero, -1 # sets v0 to 1 so when it returns to continue the branches are not triggered
 	j continue
 	
@@ -245,51 +307,101 @@ edit:
 	la $a1, keep_id
 	jal write
 
-	
+	name_loopv:
 	li $v0, 4
 	la $a0, name_msg
 	syscall   # prints name messsage
+	
 	
 	la $a0, name
     	li $a1, 150
     	li $v0, 8	
    	syscall		# gets name
-   	
+   	lb $v0, name
+   	beq $v0, 0xA, name_loopv
 	la $a1, name
 	jal write
 
-	
+	shname_loopv:
 	li $v0, 4
 	la $a0, short_name_msg
 	syscall   # prints short name message
 	
+
 	la $a0, short_name
     	li $a1, 30
     	li $v0, 8
    	syscall		# gets short name
+   	lb $v0, short_name
+   	beq $v0, 0xa, shname_loopv
  	la $a1, short_name
 	jal write
 
-   	li $v0, 4
+   	loop1v:
+    	li $v0, 4
 	la $a0, phone_msg
 	syscall   # prints short name message
-	
 	la $a0, phone
-    	li $a1, 14
+    	li $a1, 15
     	li $v0, 8
-   	syscall		# gets phone number 
-   	la $a1, phone
-	jal write
+   	syscall		# gets phone number
+   	lb $v0, phone
+   	beq $v0, 0xa, loop1v
+   	la $t0, phone
+   	add $t1, $0, $0 
+	loop2v:		#count the number of digits
+		bgt $t1, 0xE, phone_invalid
+		lb $t2, 0($t0)
+		beq $t2, 0xA, loop3v
+    		beq $t1, $0, L3v 		# first element is (
+    		beq $t1, 0x3, L4v		# third element is )
+    		beq $t1, 0x8, L5v		# eighth element is -
+    		addi $t1, $t1, 1
+    		addi $t0, $t0, 1
+    		j loop2v   			 
+    	L3v:
+    		beq $t2, 0x28, L6v
+    		j phone_invalid
+    		L6v:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2v
+    	L4v:
+    		beq $t2, 0x29, L7v
+    		j phone_invalid
+    		L7v:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2v
+    	L5v:
+    		beq $t2, 0x2D, L8v
+    		j phone_invalid
+    		L8v:
+    			addi $t1, $t1, 1
+    			addi $t0, $t0, 1
+    			j loop2v
+    	phone_invalidv:	
+		li $v0, 4
+		la $a0, invalid_phone
+		syscall   # prints message
+		j loop1v	   	
+   		
+loop3v:
+   		la $a1, phone
+		jal write
 
    	
    	li $v0, 4
 	la $a0, email_msg
 	syscall   # prints short name message
 	
+	email_loopv:
 	la $a0, email
     	li $a1, 100
     	li $v0, 8
    	syscall		# gets email address
+   	lb $v0, email
+   	beq $v0, 0xa, email_loopv
 	la $a1, email
 	jal write
 
@@ -347,6 +459,11 @@ edit:
 	jal close_file
 	
 	lw $ra, 0($sp)
+	
+	li $v0, 4
+	la $a0, success_msg
+	syscall   # prints menu
+	
 	addi $sp, $sp, 4  # pops return address
 	jr $ra
 
@@ -485,6 +602,9 @@ delete:
 
 	jal close_file
 	
+	li $v0, 4
+	la $a0, success_msg
+	syscall   # prints menu
 	
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4  # pops return address
