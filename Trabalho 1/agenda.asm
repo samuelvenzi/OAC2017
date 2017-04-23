@@ -7,7 +7,7 @@ keep_id: .word 0x00000000
 number: .space 4
 name: .space 150
 short_name: .space 30
-phone: .space 14
+phone: .space 15
 email: .space 100
 menu_string: .asciiz "\nSelecione uma opção:\n1. Visualizar agenda\n2. Buscar contato\n3. Criar contato\n4. Sair\n\nOpção: "
 invalid_msg: .asciiz "\n\nOpção inválida. Digite uma opção do menu!\n"
@@ -155,6 +155,7 @@ create:
 	j continue
 	
 edit:
+
 	addi $sp, $sp, -4
 	sw $ra, 0($sp)   # pushes return address
 	move $s0, $a3
@@ -168,7 +169,7 @@ edit:
    	add $s4, $0, $0  
    	loop_edit:
    		jal read
-   
+   		
    		move_to_misc:
    			beq $v0, $0, move_end2
    			bne $s0, $a3, con
@@ -214,21 +215,6 @@ edit:
 	la $t0, misc
 	addi $t5, $a3, 0x3B212120
 	sw $t5, keep_id
-	find_id:
-		lb $t1, 0($s3)
-		lb $t2, 1($s3)
-		sll $t2, $t2, 8
-		lb $t3, 2($s3)
-		sll $t3, $t3, 16
-		lb $t4, 3($s3)
-		sll $t4, $t4, 24
-		or $t1, $t1, $t2
-		or $t1, $t1, $t3
-		or $t1, $t1, $t4
-		beq $t1, $t5, out_id
-	
-		j find_id
-	out_id:
 	
 	
 	li $s4, 1
@@ -363,7 +349,145 @@ edit:
 	lw $ra, 0($sp)
 	addi $sp, $sp, 4  # pops return address
 	jr $ra
+
+
 delete:
+	addi $sp, $sp, -4
+	sw $ra, 0($sp)   # pushes return address
+	move $s0, $a3
+	 
+	jal open_file_r
+	
+   	addi $a3, $0, 1
+   	la $s1, register
+   	la $s2, misc
+   	add $t9, $0, $0  # flag so t4 does not reset
+   	add $s4, $0, $0  
+   	loop_delete:
+
+   		jal read
+   		move_to_misc2:
+   			beq $v0, $0, move_end4
+   			bne $s0, $a3, con2
+   			addi $s4, $s4, 1
+   			bne $s4, 1, con2
+   			move $s3, $s2	
+   			con2:
+   			lb $t3, 0($s1)
+   			beq $t3, $0, move_end3
+   			sb $t3, 0($s2)
+   			addi $s1, $s1, 1
+   			addi $s2, $s2, 1
+   			
+   		j move_to_misc2
+   		move_end3:
+   		addi $s2, $s2, -1
+   		li $t3, 0xA
+   		sb $t3, 0($s2)
+   		addi $s2, $s2, 1
+   		li $t3, 0xA
+   		sb $t3, 0($s2)
+   		addi $s2, $s2, 1
+   		
+   		move_end4:
+   		la $s1, register
+   		li $t3, 0x3B
+   		addi $s2, $s2, -2
+   		sb $t3, 0($s2)
+   		li $t3, 0xA
+   		addi $s2, $s2, 1
+   		sb $t3, 0($s2)
+   		addi $s2, $s2, 1
+   		beq $v0, $0, end_delete
+		addi $a3, $a3, 1
+   		j loop_delete
+   	end_delete:
+
+
+   	jal close_file
+   
+	move $a3, $s0
+
+	la $t0, misc
+	addi $t5, $a3, 0x3B212120
+	sw $t5, keep_id
+	
+	
+	
+	li $s4, 1
+	jal open_file_w
+	
+	sb $0, 0($s3)
+	sb $0, 1($s3)
+	sb $0, 2($s3)
+	sb $0, 3($s3)
+	la $a1, misc
+
+
+	add $t0, $0, $0
+   	move $t1, $a1
+   	count5:    # counts how many chars must be written in file so it does not write \0
+   		lb $t2, 0($t1)
+   		beq $t2, $0, out5
+   		addi $t1, $t1, 1
+   		addi $t0, $t0, 1
+   		j count5
+   	out5:
+   	move $a2, $t0
+	li   $v0, 15       # system call for write to file
+	move $a0, $s6      # file descriptor 
+	syscall
+
+
+	add $t1, $0, $0
+	rest2:
+		lb $t0, ($s3)
+		beq $t0, 0x21, end_rest2
+		bne $t0, $0, rest_cont7
+		addi $t1, $t1, 1
+		rest_cont7:
+		bne $t1, 4, rest_cont6
+		beq $t0, $0, end_rest2
+		rest_cont6:
+		addi $s3, $s3, 1
+		j rest2
+	end_rest2:
+	addi $s3, $s3, 1
+	add $t1, $0, $0
+	delimeter_counter2:
+		lb $t0, ($s3)
+		beq $t0, $0, delimeter_out2
+		bne $t0, 0x3b, delimeter_continue2
+		addi $t1, $t1, 1
+		delimeter_continue2:
+		beq $t1, 4, delimeter_out2
+		addi $s3, $s3, 1
+		j delimeter_counter2
+	delimeter_out2:
+	addi $s3, $s3, 2
+	la $a1, ($s3)
+	
+	
+	add $t0, $0, $0
+   	move $t1, $a1
+   	count4:    # counts how many chars must be written in file so it does not write \0
+   		lb $t2, 0($t1)
+   		beq $t2, $0, out4
+   		addi $t1, $t1, 1
+   		addi $t0, $t0, 1
+   		j count4
+   	out4:
+   	move $a2, $t0
+	li   $v0, 15       # system call for write to file
+	move $a0, $s6      # file descriptor 
+	syscall            # write to file
+
+
+	jal close_file
+	
+	
+	lw $ra, 0($sp)
+	addi $sp, $sp, 4  # pops return address
 
 	jr $ra
 	
@@ -390,36 +514,39 @@ seek:
 	syscall   # prints new line
    	
    	addi $a3, $0, 1
-   	add $s3, $0, $0
+   	addi $s3, $0, 1
    	la $t0, register
    	add $t9, $0, $0  # flag so t4 does not reset
 	loop_seek:
-		addi $a3, $a3, 1
+		
 		jal read
 		beq $v0, $0, end_seek
-		
    		addi $t0, $t0, 4    # address of name inside register
+   		
    		lb $t1, 0($t0)
    		blt $t1, 0x61, seek_cont2
 		addi $t1, $t1, -0x20
 		seek_cont2:
 		bne $t1, $s2, seek_cont3
-		addi $s3, $s3, 1
-		li $v0, 4
+		
+   		li $v0, 4
 		la $a0, nl
-		syscall   # prints new line
+		syscall
    		
    		li $v0, 1
-		la $a0, 0($s3)
+		la $a0, ($s3)
 		syscall   # prints option
-		addi $a3, $a3, 1
+
 		li $v0, 4
 		la $a0, option
 		syscall   # prints option
+		
 		li $v0, 4
 		la $a0, 0($t0)
 		syscall   # prints whole register
 		seek_cont3:
+		addi $a3, $a3, 1
+		addi $s3, $s3, 1
    		j loop_seek
    	end_seek:
 	jal close_file
