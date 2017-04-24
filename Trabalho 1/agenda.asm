@@ -1,3 +1,8 @@
+#	OAC
+#	Univerdade de Brasília 
+#	Samuel Venzi Lima Monteiro de Oliveira - 14/0162241
+#	Danielle Almeida Lima - 14/015740
+#
 .data
 
 buffer: .space 4
